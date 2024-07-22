@@ -1,14 +1,40 @@
-// const db = require('../config/config.js');
+// const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken");
+const connection = require("../config/config");
+const express = require("express");
+const router = express.Router();
 
-// exports.login1 = (req, res) => {
-//   const { username, upassword } = req.body;
-//   const sql = 'SELECT * FROM login_details WHERE username = ? AND upassword = ?';
-//   db.query(sql, [username, upassword], (err, result) => {
-//     if (err) throw err;
-//     if (result.length < 0) {
-//       res.json({ success: true });
-//     } else {
-//       res.status(500).json({ success: false });
-//     }
-//   });
-// };
+router.post("/", async (req, res) => {
+  try {
+    const { username, password } = req.body;
+    const countSql = `SELECT COUNT(*) as count FROM employees WHERE empmail = ? AND password = ?`;
+    const [countRows] = await connection.query(countSql, [username, password]);
+
+    if (countRows[0].count != 1) {
+      res.status(500).send("User Not found");
+      return false;
+    }
+
+    const roleSql = `SELECT emprole FROM employees WHERE empmail = ? AND password = ?`;
+    const [roleRows] = await connection.query(roleSql, [username, password]);
+
+    console.log(roleRows);
+    const role = roleRows[0].emprole;
+
+    // Token generation
+    const token = jwt.sign(
+      { userId: username, role: roleRows[0].role_name },
+      "2@EH",
+      {
+        expiresIn: "1h",
+      }
+    );
+    res.cookie("token", token);
+    res.status(200).json({ token });
+  } catch (error) {
+    console.log(error);
+    res.status(500).send("Internal Server Error");
+  }
+});
+
+module.exports = router;

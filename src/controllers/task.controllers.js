@@ -1,29 +1,47 @@
 const db = require("../config/config.js");
 
-exports.getAllTasks = (req, res) => {
+async function getAllTasks(req, res) {
   const sql = "SELECT * FROM Tasks";
-  db.query(sql, (err, result) => {
-    if (err) throw err;
-    res.json(result);
-  });
-};
+  try {
+    const [rows, fields] = await db.query(sql);
+    res.send(rows);
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+}
 
-exports.addTask = (req, res) => {
+async function addTask(req, res) {
   const { taskid, projectid, taskname, empid, duration, status } = req.body;
   const sql =
     "INSERT INTO Tasks (taskid, projectid, taskname, empid, duration, status) VALUES (?, ?, ?, ?, ?, ?)";
-  db.query(
-    sql,
-    [taskid, projectid, taskname, empid, duration, status],
-    (err, result) => {
-      if (err) throw err;
-      res.json({ success: true, message: "Task record inserted" });
-    }
-  );
-};
+
+  try {
+    const [rows, fields] = await db.query(sql, [
+      taskid,
+      projectid,
+      taskname,
+      empid,
+      duration,
+      status,
+    ]);
+
+    res.status(200).json({
+      success: true,
+      message: "Task added successfully",
+      data: rows,
+    });
+  } catch (error) {
+    console.error("Error adding task:", error);
+    res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+    });
+  }
+}
 
 // Function to get task status
-exports.getTasksStatus = (req, res) => {
+async function getTasksStatus(req, res) {
   const sql = `
     SELECT 
       p.projectid,
@@ -37,10 +55,13 @@ exports.getTasksStatus = (req, res) => {
     GROUP BY 
       p.projectid, p.projectname
   `;
-  db.query(sql, (err, result) => {
-    if (err) {
-      return res.status(500).json({ error: err.message });
-    }
-    res.json(result);
-  });
-};
+  try {
+    const [rows, fields] = await db.query(sql);
+    res.send(rows);
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+}
+
+module.exports = { getTasksStatus, getAllTasks, addTask };

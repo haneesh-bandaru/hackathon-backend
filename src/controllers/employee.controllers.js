@@ -1,16 +1,17 @@
 const db = require("../config/config.js");
 
-exports.getAllEmployees = (req, res) => {
+async function getAllEmployees(req, res) {
   const sql = "SELECT * FROM Employees";
-  db.query(sql, (err, result) => {
-    if (err) throw err;
-    res.json(result);
-  });
-};
+  try {
+    const [rows, fields] = await db.query(sql);
+    res.send(rows);
+  } catch (error) {
+    console.error("Error getting all employees:", error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+}
 
-// inserting into employee table
-
-exports.addEmployee = (req, res) => {
+async function addEmployee(req, res) {
   const {
     empid,
     empname,
@@ -27,9 +28,9 @@ exports.addEmployee = (req, res) => {
   } = req.body;
   const sql =
     "INSERT INTO Employees (empid, empname, empmail, emprole, skill_frontend, skill_backend, skill_db, skill_other, availability, hierarchial_role, assigned_to, password) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-  db.query(
-    sql,
-    [
+
+  try {
+    const [rows, fields] = await db.query(sql, [
       empid,
       empname,
       empmail,
@@ -42,32 +43,43 @@ exports.addEmployee = (req, res) => {
       hierarchial_role,
       assigned_to,
       password,
-    ],
-    (err, result) => {
-      if (err) {
-        console.log(err);
-        throw err;
-      }
-      res.json({ success: true, message: "Employee record inserted" });
-    }
-  );
-};
+    ]);
 
-// Getting count of Employee assign to project and count of employees free from the table
-exports.getEmpCount = (req, res) => {
-  const sqlAssigned =
-    "SELECT count(*) as `Assigned` FROM Employees WHERE assigned_to IS NOT NULL";
-  const sqlNotAssigned =
-    "SELECT count(*) as `NotAssigned` FROM Employees WHERE assigned_to IS NULL";
-  db.query(sqlAssigned, (err, assignedResult) => {
-    if (err) throw err;
-    db.query(sqlNotAssigned, (err, notAssignedResult) => {
-      if (err) throw err;
-      const result = {
-        Assigned: assignedResult[0].Assigned,
-        NotAssigned: notAssignedResult[0].NotAssigned,
-      };
-      res.json(result);
+    res.status(200).json({
+      success: true,
+      message: "Employee record inserted",
+      data: rows,
     });
-  });
-};
+  } catch (error) {
+    console.error("Error adding employee:", error);
+    res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+    });
+  }
+}
+
+async function getEmpCount(req, res) {
+  const sqlAssigned = "SELECT count(*) as `Assigned` FROM Employees WHERE assigned_to IS NOT NULL";
+  const sqlNotAssigned = "SELECT count(*) as `NotAssigned` FROM Employees WHERE assigned_to IS NULL";
+
+  try {
+    const [assignedResult, assignedFields] = await db.query(sqlAssigned);
+    const [notAssignedResult, notAssignedFields] = await db.query(sqlNotAssigned);
+
+    const result = {
+      Assigned: assignedResult[0].Assigned,
+      NotAssigned: notAssignedResult[0].NotAssigned,
+    };
+
+    res.status(200).json(result);
+  } catch (error) {
+    console.error("Error getting employee count:", error);
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+}
+
+module.exports = { getAllEmployees, addEmployee, getEmpCount };
