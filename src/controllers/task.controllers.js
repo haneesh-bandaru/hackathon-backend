@@ -49,9 +49,9 @@ async function getTasksStatus(req, res) {
       SUM(CASE WHEN t.status = 'Not Started' THEN 1 ELSE 0 END) AS completed_count,
       SUM(CASE WHEN t.status = 'In Progress' THEN 1 ELSE 0 END) AS inprogress_count
     FROM 
-      projects p
+      Projects p
     LEFT JOIN 
-      tasks t ON p.projectid = t.projectid
+      Tasks t ON p.projectid = t.projectid
     GROUP BY 
       p.projectid, p.projectname
   `;

@@ -7,7 +7,7 @@ const router = express.Router();
 router.post("/", async (req, res) => {
   try {
     const { username, password } = req.body;
-    const countSql = `SELECT COUNT(*) as count FROM employees WHERE empmail = ? AND password = ?`;
+    const countSql = `SELECT COUNT(*) as count FROM Employees WHERE empmail = ? AND password = ?`;
     const [countRows] = await connection.query(countSql, [username, password]);
 
     if (countRows[0].count != 1) {
@@ -15,7 +15,7 @@ router.post("/", async (req, res) => {
       return false;
     }
 
-    const roleSql = `SELECT emprole FROM employees WHERE empmail = ? AND password = ?`;
+    const roleSql = `SELECT emprole FROM Employees WHERE empmail = ? AND password = ?`;
     const [roleRows] = await connection.query(roleSql, [username, password]);
 
     console.log(roleRows);
